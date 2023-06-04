@@ -59,7 +59,7 @@ def _save_normalized_data(username):
     with h5py.File(f'train_data/{username}/train_data.h5', 'w') as hdf:
         hdf.create_dataset('train_data', data=sliding_window_data)
         hdf.create_dataset('train_labels', data=train_labels)
-    with open("names_for_system", "a") as file:
+    with open("names_for_system.txt", "a") as file:
         file.write("\n" + username)
 
 

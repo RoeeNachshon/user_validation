@@ -7,7 +7,8 @@ import train_model
 
 def init():
     username = _get_username()
-    _init_model(username)
+    should_record = _open_choice_window("Should I record?")
+    _init_model(username, should_record)
     window = _create_window()
     window.wm_attributes('-transparentcolor', window['bg'])
     output_frame = _create_frame_for_output_boxes(window)
@@ -15,13 +16,13 @@ def init():
     _create_title(output_frame, "accuracy:")
     output_box2 = _create_an_output_box(output_frame)
     switch_var = _create_switch_button(output_frame, "lock")
-    return window, output_label, output_box2, switch_var, username
+    return window, output_label, output_box2, switch_var, username, should_record
 
 
-def _init_model(username):
-    with open("names_for_system", "r") as file:
+def _init_model(username, should_record):
+    with open("names_for_system.txt", "r") as file:
         names = file.readline()
-        if username not in names:
+        if username not in names and should_record == "No":
             create_train_files.create_train_file(username)
             train_model.get_model(username)
 

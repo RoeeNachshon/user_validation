@@ -19,7 +19,7 @@ count = 0  # number of tuples inserted
 model = None
 sem = threading.Semaphore(0)  # semaphore to count the number of windows in the queue
 mutex = threading.Semaphore(1)  # semaphore to protect the insert and pop operations on the queue
-output_label, output_textbox2, window, switch, username = None, None, None, None, None
+output_label, output_textbox2, window, switch, username, should_record = None, None, None, None, None, None
 fail_count = 0
 
 
@@ -94,9 +94,9 @@ def predict_and_print(position_number):
 
     final_vector = np.array(final_vector)
     final_vector = final_vector.reshape(1, 30, 6)
-
-    predictions = model.predict(x=final_vector, verbose=1)
-    print_predictions(predictions)
+    if should_record == "No":
+        predictions = model.predict(x=final_vector, verbose=1)
+        print_predictions(predictions)
 
 
 def print_predictions(predictions):
@@ -131,6 +131,12 @@ def get_final_vector(down_down_chunk, dwell_chunk, position_number, up_down_chun
             down_down_chunk[i],
             up_down_chunk[i])
         final_vector.append(vector_to_append)
+    if should_record == "Yes":
+        directory = f"keystrokes_data/{username}"
+        os.makedirs(directory, exist_ok=True)
+        with open(f"{directory}/data.txt", "a") as file:
+            file.write(str(final_vector[-1]))
+        ui.update_output_box(output_textbox2, "put")
     return final_vector
 
 
@@ -145,18 +151,18 @@ def predictions_thread():
 
 def get_model():
     global model
-    try:
+    if os.path.exists(f'saved_models/{username}/model.h5'):
         model = keras.models.load_model(f'saved_models/{username}/model.h5')
-    except OSError:
+    else:
         print("No such user in the systems!")
         quit()
 
 
 def main():
-    global output_label, output_textbox2, switch, username
+    global output_label, output_textbox2, switch, username, should_record
     threading.Thread(target=predictions_thread).start()
     with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-        root, output_label, output_textbox2, switch, username = ui.init()
+        root, output_label, output_textbox2, switch, username, should_record = ui.init()
         get_model()
         root.mainloop()
         listener.start()

@@ -5,5 +5,4 @@ pynput~=1.7.6
 tkinter
 keras
 tensorflow~=2.3.0
-PIL
 pillow~=9.5.0
