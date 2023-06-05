@@ -136,6 +136,25 @@ def get_final_vector(down_down_chunk, dwell_chunk, position_number, up_down_chun
     return final_vector
 
 
+def predictions_thread():
+    while True:
+        sem.acquire()
+        mutex.acquire()
+        x = q.popleft()
+        mutex.release()
+        predict_and_print(x)
+
+
+def get_model():
+    global model
+    if should_record == "No":
+        if os.path.exists(f'saved_models/{username}/model.h5'):
+            model = keras.models.load_model(f'saved_models/{username}/model.h5')
+        else:
+            print("No such user in the systems!")
+            quit()
+
+
 def make_new_user_files(final_vector):
     directory = f"keystrokes_data/{username}"
     os.makedirs(directory, exist_ok=True)
@@ -178,25 +197,6 @@ def _get_data_to_write(directory, final_vector):
 def _write_in_file(directory, new_data):
     with open(f"{directory}/data.txt", "w") as file:
         file.write(str(new_data))
-
-
-def predictions_thread():
-    while True:
-        sem.acquire()
-        mutex.acquire()
-        x = q.popleft()
-        mutex.release()
-        predict_and_print(x)
-
-
-def get_model():
-    global model
-    if should_record == "No":
-        if os.path.exists(f'saved_models/{username}/model.h5'):
-            model = keras.models.load_model(f'saved_models/{username}/model.h5')
-        else:
-            print("No such user in the systems!")
-            quit()
 
 
 def main():
