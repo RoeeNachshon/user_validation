@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import font
-from PIL import Image, ImageTk
 import create_train_files
 import train_model
 
@@ -10,7 +9,8 @@ def init():
     should_record = _open_choice_window("Should I record?")
     _init_model(username, should_record)
     window = _create_window()
-    window.wm_attributes('-transparentcolor', window['bg'])
+    #window.attributes('-alpha', 0)
+    #window.wm_attributes('-transparentcolor', window['bg'])
     output_frame = _create_frame_for_output_boxes(window)
     output_label = _create_a_status_label(output_frame)
     _create_title(output_frame, "accuracy:")
@@ -97,8 +97,9 @@ def _create_window():
     window.title("Input and Output Window")
     # Configure the window to open in full screen
     window.attributes('-topmost', True)  # Set the window to be topmost
-
-    window.attributes('-fullscreen', True)  # Open the window in fullscreen mode
+    #window.wm_attributes('-fullscreen', True)
+    #window.attributes('-zoomed', True)  # Open the window in fullscreen mode
+    window.state("zoomed")
 
     # Bind the Escape key to close the window
     window.bind('<Escape>', lambda event: close_window(window))

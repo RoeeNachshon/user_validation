@@ -119,7 +119,8 @@ def print_predictions(predictions):
 
 def turn_off():
     os.system("rundll32.exe user32.dll,LockWorkStation")  # windows
-    os.system("/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend")  # mac
+    os.system(
+        "osascript -e 'tell application \"System Events\" to keystroke \"q\" using {control down, command down}'")  # mac
 
 
 def get_final_vector(down_down_chunk, dwell_chunk, position_number, up_down_chunk, virtual_keys_id):
