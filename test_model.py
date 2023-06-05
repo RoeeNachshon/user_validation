@@ -132,12 +132,52 @@ def get_final_vector(down_down_chunk, dwell_chunk, position_number, up_down_chun
             up_down_chunk[i])
         final_vector.append(vector_to_append)
     if should_record == "Yes":
-        directory = f"keystrokes_data/{username}"
-        os.makedirs(directory, exist_ok=True)
-        with open(f"{directory}/data.txt", "a") as file:
-            file.write(str(final_vector[-1]))
-        ui.update_output_box(output_textbox2, "put")
+        make_new_user_files(final_vector)
     return final_vector
+
+
+def make_new_user_files(final_vector):
+    directory = f"keystrokes_data/{username}"
+    os.makedirs(directory, exist_ok=True)
+    if ui.username_in_system_user(username):
+        new_data = _get_data_to_write(directory, final_vector)
+        _write_in_file(directory, new_data)
+    else:
+        data_to_write = _arrange_new_data(final_vector)
+        _write_in_file(directory, data_to_write)
+        _append_user_to_system(username)
+
+    ui.update_output_box(output_textbox2, "put")
+
+
+def _arrange_new_data(new_data):
+    result = []
+    for values in new_data:
+        key1 = int(values[0] * 254)
+        key2 = int(values[1] * 254)
+        temp = [key1, key2]
+        for i in range(2, len(values)):
+            temp.append(values[i])
+        result.append(tuple(temp))
+    return result
+
+
+def _append_user_to_system(user_name):
+    with open("names_for_system.txt", "a") as file:
+        file.write("\n" + user_name)
+
+
+def _get_data_to_write(directory, final_vector):
+    with open(f"{directory}/data.txt", "r") as file:
+        old_data = file.read().split("]")
+        new_data = old_data[0][1:]
+        new_data += (str(final_vector))
+    return new_data
+
+
+def _write_in_file(directory, new_data):
+    with open(f"{directory}/data.txt", "w") as file:
+        file.write(str(new_data))
 
 
 def predictions_thread():
@@ -151,11 +191,12 @@ def predictions_thread():
 
 def get_model():
     global model
-    if os.path.exists(f'saved_models/{username}/model.h5'):
-        model = keras.models.load_model(f'saved_models/{username}/model.h5')
-    else:
-        print("No such user in the systems!")
-        quit()
+    if should_record == "No":
+        if os.path.exists(f'saved_models/{username}/model.h5'):
+            model = keras.models.load_model(f'saved_models/{username}/model.h5')
+        else:
+            print("No such user in the systems!")
+            quit()
 
 
 def main():

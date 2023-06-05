@@ -20,11 +20,15 @@ def init():
 
 
 def _init_model(username, should_record):
+    if not username_in_system_user(username) and should_record == "No":
+        create_train_files.create_train_file(username)
+        train_model.get_model(username)
+
+
+def username_in_system_user(username):
     with open("names_for_system.txt", "r") as file:
         names = file.readline()
-        if username not in names and should_record == "No":
-            create_train_files.create_train_file(username)
-            train_model.get_model(username)
+        return username in names
 
 
 def _open_choice_window(title):
