@@ -1,1 +1,1 @@
-"""smash = yes"""
+pass

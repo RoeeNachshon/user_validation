@@ -1,16 +1,15 @@
+import os
 import tkinter as tk
 from tkinter import font
-from PIL import Image, ImageTk
 import create_train_files
 import train_model
 
 
-def init():
+def init() -> tuple:
     username = _get_username()
     should_record = _open_choice_window("Should I record?")
-    _init_model(username, should_record)
+    _make_new_model_available(username, should_record)
     window = _create_window()
-    window.wm_attributes('-transparentcolor', window['bg'])
     output_frame = _create_frame_for_output_boxes(window)
     output_label = _create_a_status_label(output_frame)
     _create_title(output_frame, "accuracy:")
@@ -19,20 +18,14 @@ def init():
     return window, output_label, output_box2, switch_var, username, should_record
 
 
-def _init_model(username, should_record):
-    if not username_in_system_user(username) and should_record == "No":
+def _make_new_model_available(username: str, should_record: str):
+    if not os.path.exists(f"saved_models/{username}") and should_record == "No":
         create_train_files.create_train_file(username)
-        train_model.get_model(username)
+        train_model.init_model(username)
 
 
-def username_in_system_user(username):
-    with open("names_for_system.txt", "r") as file:
-        names = file.readline()
-        return username in names
-
-
-def _open_choice_window(title):
-    def submit_answer():
+def _open_choice_window(title: str) -> str:
+    def _submit_answer():
         nonlocal answer
         if var.get() == 1:
             answer = "Yes"
@@ -53,7 +46,7 @@ def _open_choice_window(title):
     radio_no = tk.Radiobutton(window, text="No", variable=var, value=2)
     radio_no.pack()
 
-    button_submit = tk.Button(window, text="Submit", command=submit_answer)
+    button_submit = tk.Button(window, text="Submit", command=_submit_answer)
     button_submit.pack()
 
     window.mainloop()
@@ -61,8 +54,8 @@ def _open_choice_window(title):
     return answer
 
 
-def _get_username():
-    def submit_username():
+def _get_username() -> str:
+    def _submit_username():
         nonlocal username
         username = entry.get()
         window.destroy()
@@ -78,7 +71,7 @@ def _get_username():
     entry = tk.Entry(window)
     entry.pack()
 
-    button = tk.Button(window, text="Submit", command=submit_username)
+    button = tk.Button(window, text="Submit", command=_submit_username)
     button.pack()
 
     window.mainloop()
@@ -86,33 +79,32 @@ def _get_username():
     return username
 
 
-def close_window(window):
+def _close_window(window: tk.Tk):
     # Function to close the window
     window.destroy()
 
 
-def _create_window():
+def _create_window() -> tk.Tk:
     # Create the main window
     window = tk.Tk()
     window.title("Input and Output Window")
     # Configure the window to open in full screen
     window.attributes('-topmost', True)  # Set the window to be topmost
-
-    window.attributes('-fullscreen', True)  # Open the window in fullscreen mode
+    # window.wm_attributes('-fullscreen', True)
 
     # Bind the Escape key to close the window
-    window.bind('<Escape>', lambda event: close_window(window))
+    window.bind('<Escape>', lambda event: _close_window(window))
 
     return window
 
 
-def _create_title(frame, text):
+def _create_title(frame: tk.Frame, text: str):
     # Add a title for the input box
     input_title_label = tk.Label(frame, text=text, font=font.Font(size=20, weight='bold'))
     input_title_label.pack(side=tk.TOP)
 
 
-def _create_an_output_box(output_frame):
+def _create_an_output_box(output_frame: tk.Frame) -> tk.Text:
     # Create the first output screen
     output_textbox_font = font.Font(size=14)  # Define font size for output text boxes
     output_textbox = tk.Text(output_frame, height=5, width=40, font=output_textbox_font)
@@ -121,14 +113,14 @@ def _create_an_output_box(output_frame):
     return output_textbox
 
 
-def _create_frame_for_output_boxes(window):
+def _create_frame_for_output_boxes(window: tk.Tk) -> tk.Frame:
     # Create a frame for the output screens
     output_frame = tk.Frame(window)
     output_frame.pack(side=tk.TOP, padx=10, pady=10, anchor='ne')
     return output_frame
 
 
-def update_output_box(output_textbox, content):
+def update_output_box(output_textbox: tk.Text, content: str):
     # Update the content of the output box
     output_textbox.config(state='normal')
     output_textbox.delete('1.0', tk.END)  # Clear previous content
@@ -136,19 +128,19 @@ def update_output_box(output_textbox, content):
     output_textbox.config(state='disabled')
 
 
-def _create_a_status_label(output_frame):
+def _create_a_status_label(output_frame: tk.Frame) -> tk.Label:
     # Create a label to display the text "not sure"
     output_label = tk.Label(output_frame, text="not user", font=font.Font(size=24, weight='bold'), fg="red")
     output_label.pack(side=tk.TOP)
     return output_label
 
 
-def update_status_label(output_label, content, color):
+def update_status_label(output_label: tk.Label, content: str, color: str):
     # Update the content and color of the output label
     output_label.config(text=str(content), fg=color)
 
 
-def _create_switch_button(output_frame, text):
+def _create_switch_button(output_frame: tk.Frame, text: str) -> tk.IntVar:
     # Create a switch button below the output box
     switch_var = tk.IntVar()
     switch_button = tk.Checkbutton(output_frame, text=text, variable=switch_var, font=font.Font(size=20))

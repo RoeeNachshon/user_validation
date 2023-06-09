@@ -4,7 +4,6 @@ import os
 import ast
 import h5py
 import random
-from numpy import ndarray
 
 PATH = "keystrokes_data/"
 WINDOW_SIZE = 30
@@ -12,7 +11,7 @@ train_labels = np.array([])
 sliding_window_data = np.array([])
 
 
-def create_train_file(username):
+def create_train_file(username: str):
     _normalize_main_user(username)
 
     _normalize_other_users()
@@ -21,7 +20,7 @@ def create_train_file(username):
     print("DONE!")
 
 
-def _normalize_main_user(username):
+def _normalize_main_user(username: str):
     user_data = np.array([])
     if os.path.exists(PATH + username):
         for filename in os.listdir(PATH + username):
@@ -36,7 +35,7 @@ def _normalize_main_user(username):
         quit()
 
 
-def _finish_norm_main_user(user_data: ndarray):
+def _finish_norm_main_user(user_data: np.ndarray):
     user_data = user_data.reshape(int(user_data.shape[0] / 6), 6)
     user_data = _normalize_keys_values(user_data)
     _append_to_sw(user_data)
@@ -49,18 +48,18 @@ def _normalize_other_users():
         _norm_other_users_data(path)
 
 
-def _save_normalized_data(username):
+def _save_normalized_data(username: str):
     global train_labels
     global sliding_window_data
 
     train_labels = train_labels.reshape(int(train_labels.shape[0]), 1)
     sliding_window_data = sliding_window_data.reshape(int(train_labels.shape[0]), WINDOW_SIZE, 6)
     sliding_window_data, train_labels = shuffle(sliding_window_data, train_labels)
-    with h5py.File(f'train_data/{username}/train_data.h5', 'w') as hdf:
+    directory = f"train_data/{username}"
+    os.makedirs(directory, exist_ok=True)
+    with h5py.File(f'{directory}/data.h5', 'w') as hdf:
         hdf.create_dataset('train_data', data=sliding_window_data)
         hdf.create_dataset('train_labels', data=train_labels)
-    with open("names_for_system.txt", "a") as file:
-        file.write("\n" + username)
 
 
 def _norm_other_users_data(folder_path: str):
@@ -69,7 +68,7 @@ def _norm_other_users_data(folder_path: str):
         _norm_others_values(filename, folder_path)
 
 
-def _get_file_data_type(filepath: str) -> ndarray:
+def _get_file_data_type(filepath: str) -> np.ndarray:
     with open(filepath, 'r') as file:
         file_data = file.readlines()
         for line in file_data:
@@ -93,7 +92,7 @@ def _norm_others_values(filename: str, folder_path: str):
     _append_to_labels(0, new_train_data)
 
 
-def _append_to_labels(user_type: int, data: ndarray):
+def _append_to_labels(user_type: int, data: np.ndarray):
     global train_labels
 
     label = np.empty(int(data.shape[0] - WINDOW_SIZE))
@@ -101,19 +100,19 @@ def _append_to_labels(user_type: int, data: ndarray):
     train_labels = np.append(train_labels, label)
 
 
-def _append_to_sw(data: ndarray):
+def _append_to_sw(data: np.ndarray):
     global sliding_window_data
 
     for line in range(data.shape[0] - WINDOW_SIZE):
         sliding_window_data = np.append(sliding_window_data, data[line:line + WINDOW_SIZE])
 
 
-def _cut_data_80_values(data: ndarray) -> ndarray:
+def _cut_data_80_values(data: np.ndarray) -> np.ndarray:
     cut_value = random.randint(0, data.shape[0] - 81)
     return data[cut_value:cut_value + 80]
 
 
-def _normalize_keys_values(data: ndarray) -> ndarray:
+def _normalize_keys_values(data: np.ndarray) -> np.ndarray:
     for j in range(0, len(data)):
         data[j][0] = data[j][0] / 254
         data[j][1] = data[j][1] / 254
