@@ -14,6 +14,11 @@ INPUT_SHAPE = (30, 6)
 
 
 def _get_data_from_files(username: str):
+    """
+    Extracts the data from the file
+    :param username: A string of the user name
+    :return: Tuple of the data and labels
+    """
     with h5py.File(f'train_data/{username}/data.h5', 'r') as hdf:
         data = hdf.get('train_data')
         train_data = np.array(data)
@@ -23,6 +28,13 @@ def _get_data_from_files(username: str):
 
 
 def _sort_data_by_label(is_user: bool, train_data: ndarray, train_labels: ndarray) -> tuple:
+    """
+    Sorts the data by the labels and the user type.
+    :param is_user: 1 if user 0 if not
+    :param train_data: The data to sort
+    :param train_labels: The data labels
+    :return: Tuple of the sorted data and labels
+    """
     num = int(is_user)
     val_data = np.array([])
     for i in range(1000):
@@ -35,6 +47,11 @@ def _sort_data_by_label(is_user: bool, train_data: ndarray, train_labels: ndarra
 
 
 def _get_data(username: str) -> tuple:
+    """
+    Gets the sorted data from the files
+    :param username: A string of the user name
+    :return: a list of val1_labels, val1_data, val0_labels, val0_data, train_data, train_labels
+    """
     train_data, train_labels = _get_data_from_files(username)
     val1_labels, val1_data = _sort_data_by_label(True, train_data, train_labels)
     val0_labels, val0_data = _sort_data_by_label(False, train_data, train_labels)
@@ -44,6 +61,12 @@ def _get_data(username: str) -> tuple:
 
 
 def _train_model(train_data: ndarray, train_labels: ndarray) -> keras.models.Sequential:
+    """
+    Trains the model with the labels and the data
+    :param train_data: The data to train it with
+    :param train_labels: The data labels
+    :return: The trained model
+    """
     model = _create_model()
     print(model.summary())
     train_data = train_data[1000:]
@@ -57,6 +80,11 @@ def _train_model(train_data: ndarray, train_labels: ndarray) -> keras.models.Seq
 
 
 def _step_decay(epoch) -> float:
+    """
+    Gets the decay rate of the model training.
+    :param epoch: A complete iteration of the entire training dataset
+    :return: The rate
+    """
     initial_lrate = 0.0001
     drop = 0.1
     epochs_drop = 100.0
@@ -65,6 +93,11 @@ def _step_decay(epoch) -> float:
 
 
 def _compile_model(model: keras.models.Sequential) -> keras.models.Sequential:
+    """
+    Compiles the model
+    :param model: The model to compile
+    :return: The compiled model
+    """
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     optimizer = keras.optimizers.Adam(learning_rate=0.0)
     metrics = ["accuracy"]
@@ -73,6 +106,10 @@ def _compile_model(model: keras.models.Sequential) -> keras.models.Sequential:
 
 
 def _create_model() -> keras.models.Sequential:
+    """
+    Creates the model
+    :return: The new model
+    """
     model = keras.models.Sequential()
     model.add(layers.Conv1D(32, 2, activation='relu', input_shape=INPUT_SHAPE))
     model.add(tf.keras.layers.LSTM(32, return_sequences=True))
@@ -85,6 +122,13 @@ def _create_model() -> keras.models.Sequential:
 
 
 def _evaluate_model(model: keras.models.Sequential, val_data: ndarray, val_labels: ndarray):
+    """
+    Evaluates the model
+    :param model: The model to evaluate
+    :param val_data: The data to evaluate the model with
+    :param val_labels: The data labels
+    :return: None
+    """
     model.evaluate(val_data, val_labels, batch_size=BATCH_SIZE, verbose=1)
     probability_model = keras.models.Sequential([model, keras.layers.Softmax()])
     predictions = probability_model(val_data)
@@ -95,6 +139,11 @@ def _evaluate_model(model: keras.models.Sequential, val_data: ndarray, val_label
 
 
 def init_model(username: str):
+    """
+    Creates the model ans initiates the learn process.
+    :param username: A string of the user name
+    :return: Saves the model as h5 file
+    """
     val1_labels, val1_data, val0_labels, val0_data, train_data, train_labels = _get_data(username)
     model = _train_model(train_data, train_labels)
     # evaluate_model(model, val1_data, val1_labels)

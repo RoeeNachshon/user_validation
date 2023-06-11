@@ -32,6 +32,11 @@ fail_count = 0
 
 
 def _on_press(key):
+    """
+    On press function
+    :param key: The key that was pressed
+    :return: None
+    """
     global last_key_press_time
     global startTyping
     global count
@@ -48,6 +53,11 @@ def _on_press(key):
 
 
 def _is_first_typed(current_time: float):
+    """
+    Record the time the first key was pressed
+    :param current_time: The time of the event
+    :return: None
+    """
     global startTyping
     if startTyping == 0:
         startTyping = current_time
@@ -56,6 +66,11 @@ def _is_first_typed(current_time: float):
 
 
 def _on_release(key) -> bool:
+    """
+    On release function
+    :param key: The key that was release
+    :return: False if the key is escape
+    """
     global count
 
     _append_times(key)
@@ -70,6 +85,11 @@ def _on_release(key) -> bool:
 
 
 def _append_times(key):
+    """
+    Append the event times to the corresponding lists
+    :param key: The key that was triggered
+    :return: None
+    """
     current_time = time()
     vk = _get_virtual_key(key)
     start = startTimes[vk]
@@ -78,6 +98,11 @@ def _append_times(key):
 
 
 def _append_to_queue(num: int):
+    """
+    Appends to queue for the sliding window size
+    :param num: The num to append
+    :return: None
+    """
     mutex.acquire()
     q.append(num)
     mutex.release()
@@ -85,6 +110,11 @@ def _append_to_queue(num: int):
 
 
 def _get_virtual_key(key) -> int:
+    """
+    Gets the correct windows virtual key code for the key
+    :param key: The key to get its vk
+    :return: The windows vk of the key
+    """
     key_value = key.vk if hasattr(key, 'vk') else key.value.vk
     if platform.system() == "Darwin":
         try:
@@ -95,6 +125,11 @@ def _get_virtual_key(key) -> int:
 
 
 def _predict_and_print(position_number: int):
+    """
+    Calculates the vector and predicts
+    :param position_number: The position of the window
+    :return: None
+    """
     global dwell
     global DownDown
     global virtualKeysID
@@ -114,30 +149,58 @@ def _predict_and_print(position_number: int):
 
 
 def _print_predictions(predictions: list):
+    """
+    Prints the predictions on the screen
+    :param predictions: The prediction to print
+    :return: None
+    """
     global fail_count
 
     for prediction in predictions:
         print(prediction)
         ui.update_output_box(output_textbox2, prediction)
-        if prediction[1] > 0.5:
-            ui.update_status_label(output_label, "user", "green")
+        _check_if_to_lock(prediction)
+
+
+def _check_if_to_lock(prediction):
+    """
+    Checks if to lock the computer after 10 false predictions
+    :param prediction: The predictions
+    :return: None
+    """
+    global fail_count
+    if prediction[1] > 0.5:
+        ui.update_status_label(output_label, "user", "green")
+        fail_count = 0
+    else:
+        ui.update_status_label(output_label, "not user", "red")
+        if switch.get() == 1 and fail_count == 15:
+            _turn_off()
             fail_count = 0
-        else:
-            ui.update_status_label(output_label, "not user", "red")
-            if switch.get() == 1 and fail_count == 15:
-                _turn_off()
-                fail_count = 0
-            elif switch.get() == 1:
-                fail_count += 1
+        elif switch.get() == 1:
+            fail_count += 1
 
 
 def _turn_off():
+    """
+    Turns off the computer
+    :return: None
+    """
     os.system("rundll32.exe user32.dll,LockWorkStation")  # windows
     os.system("osascript -e 'tell application \"System Events\" to keystroke \"q\" using {control down, command down}'")
 
 
 def _get_final_vector(down_down_chunk: np.ndarray, dwell_chunk: np.ndarray, position_number: int,
                       up_down_chunk: np.ndarray, virtual_keys_id: list) -> list:
+    """
+    Calculates the final vector to predict with
+    :param down_down_chunk: Keyboard timing list
+    :param dwell_chunk: Keyboard timing list
+    :param position_number: The position in the sliding windows
+    :param up_down_chunk: Keyboard timing list
+    :param virtual_keys_id: virtual key codes list
+    :return: list of the final vector
+    """
     final_vector = []
     index = position_number - 31
     for i in range(len(dwell_chunk) - 1):
@@ -152,6 +215,11 @@ def _get_final_vector(down_down_chunk: np.ndarray, dwell_chunk: np.ndarray, posi
 
 
 def _make_new_user_files(final_vector: tuple):
+    """
+    Makes new user txt files
+    :param final_vector: the data to append
+    :return: writes in the files
+    """
     directory = f"keystrokes_data/{username}"
     if os.path.exists(directory):
         new_data = _arrange_new_data(final_vector)
@@ -168,6 +236,11 @@ def _make_new_user_files(final_vector: tuple):
 
 
 def _arrange_new_data(new_data: tuple) -> tuple:
+    """
+    Arranges new data to match the DB format.
+    :param new_data: The data to arrange
+    :return: The arranged data
+    """
     result = [int(new_data[0] * 254), int(new_data[1] * 254)]
     for i in range(2, len(new_data)):
         result.append(new_data[i])
@@ -175,6 +248,12 @@ def _arrange_new_data(new_data: tuple) -> tuple:
 
 
 def _get_data_to_write(directory: str, final_vector: tuple) -> str:  # [(1,3,,3),()...]
+    """
+    If the file existed, combines the old data with the new one.
+    :param directory: The file's path
+    :param final_vector: The data to append
+    :return: The new combined data
+    """
     with open(f"{directory}/data.txt", "r") as file:
         old_data = file.read().split("]")
         new_data = old_data[0]
@@ -185,11 +264,21 @@ def _get_data_to_write(directory: str, final_vector: tuple) -> str:  # [(1,3,,3)
 
 
 def _write_in_file(directory: str, new_data: str):
+    """
+    Writes in the given file.
+    :param directory: The file to write
+    :param new_data: The mode of the method
+    :return: None
+    """
     with open(f"{directory}/data.txt", "w") as file:
         file.write(new_data)
 
 
 def _predictions_thread():
+    """
+    The prediction thread handling.
+    :return: None
+    """
     while True:
         sem.acquire()
         mutex.acquire()
@@ -199,16 +288,24 @@ def _predictions_thread():
 
 
 def _get_model():
+    """
+    Gets the model by the username
+    :return: None
+    """
     global model
     if should_record == "No":
         if os.path.exists(f'saved_models/{username}/model.h5'):
             model = keras.models.load_model(f'saved_models/{username}/model.h5')
         else:
-            print("No such user in the systems!")
+            print("No such model in the systems!")
             quit()
 
 
 def main():
+    """
+    Test the system. it run the UI, and if needed creates train files and runs the train model
+    :return: None
+    """
     global output_label, output_textbox2, switch, username, should_record
     threading.Thread(target=_predictions_thread).start()
     with keyboard.Listener(on_press=_on_press, on_release=_on_release) as listener:
